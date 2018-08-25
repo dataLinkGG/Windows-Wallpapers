@@ -1,0 +1,3 @@
+mount_point="/media/thomas/OS"
+paste_to="/home/thomas/Desktop/MyFolder"
+copy_from="/media/thomas/OS/Users/thomas/AppData/Local/Packages/Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy/LocalState/Assets/"

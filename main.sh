@@ -1,64 +1,56 @@
 #!/usr/bin/env bash
 
-mount_win() # Mount Windows partition
+. ./config.txt
+
+mount_OS() # Mount Windows partition
 {
-	# I created these labels just so the configuration file would look more friendly
-	mnt_pt=$( read_config "Mount point" )
-	dev=$( select_dev $type )
+	dev=$( select_dev )
 	is_mounted=`sudo mount | grep "$dev"` # The command will return some value if it's mounted
 
-	 if [ ! -n "$is_mounted" ] # so if we don't get any output, the partition is not mounted.
-	 then
-	 	if [ ! -d "$mnt_pt" ] # If there's not already a directory/folder, then create it.
-	 	then
-	 		sudo mkdir $mnt_pt
-	 	fi
-	 	sudo mount "$dev" "$mnt_pt" # Ok, now mount it!
-	 fi
-}
-
-select_wp() # Choose files to be copied by using metadata from the files and our list of exceptions (unwanted files).
-{
-    win_dir=$( read_config "Windows wallpeapers folder" )
-	exp=`cat darklist` # list of some unwanted files the user can add
-
-	cd $win_dir
-	wp_lst=`file * | grep JPEG | cut -d':' -f 1`
-	for img in ${exp[@]}
-	do
-	   wp_lst=("${wp_lst[@]/$img}") # removes the exception from the array of names
-	done
-
-	echo $wp_lst
-}
-
-copy_wp() # Copy only the wallpaper files
-{
-	win_dir=$( read_config "Windows wallpeapers folder" )
-	lnx_dir=$( read_config "Directory to paste the wallpeapers" )
-	cp_files=$( select_wp )
-
-	cd $win_dir
-	if [ ! -d $lnx_dir ]
+	if [ ! -n "$is_mounted" ] # so if we don't get any output, the partition is not mounted.
 	then
-		sudo mkdir $lnx_dir
+		if [ ! -d "$mount_point" ] # If there's not already a directory/folder, then create it.
+		then
+			sudo mkdir $mount_point
+		fi
+		sudo mount "$dev" "$mount_point" # Ok, now mount it!
 	fi
-	for img in ${cp_files[@]}
-	do
-		sudo cp --update $img $lnx_dir # Copy only the new images.
-	done
-	sudo chmod -R 777 $lnx_dir # (this script is meant to be executed as root)
 }
 
-read_config() # Read the configurations file, taking the values on the right.
+select_wallpapers() # Choose files to be copied by using metadata from the files and our list of exception (unwanted files).
 {
-    echo `cat setings | grep "$1" | cut -d'=' -f 2` # The format is "my description=my value"
+	exception_lst=`cat darklist.txt` # This list contains some unwanted files. 
+
+	cd $copy_from
+	wallpaper_lst=`file * | grep JPEG | cut -d':' -f 1`
+	for img in ${exception_lst[@]}
+	do
+		wallpaper_lst=("${wallpaper_lst[@]/$img}") # removes exceptions from the array of file names
+	done
+
+	echo $wallpaper_lst
 }
 
-select_dev() # Select our Windows device. A device name refers to the entire disk.
+copy_wp()
+{
+	wallpaper_lst=$( select_wallpapers )  # Copy only wallpaper files
+
+	cd $copy_from
+	if [ ! -d $paste_to ]
+	then
+		sudo mkdir $paste_to
+	fi
+	for img in ${wallpaper_lst[@]}
+	do
+		sudo cp --update $img $paste_to # Copy only the new images.
+	done
+	sudo chmod -R 664 $paste_to # Let's give permissions to read and write, so the user is allowed to delete the files
+}
+
+select_dev() # Select our Windows device. A device name in fdisk refers to the entire disk partition.
 {
     echo `sudo fdisk -l | grep "Microsoft basic data" | cut -d' ' -f 1` # example: /dev/sbd3
 }
 
-mount_win # the partition also can be mounted manualy (open up a file manager and then click on "OS")
+mount_OS # the partition also can be mounted manualy (open up a file manager and then click on "OS")
 copy_wp
