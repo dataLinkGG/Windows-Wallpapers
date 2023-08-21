@@ -1,4 +1,4 @@
-# Windows-Wallpapers
+# Windows-Wallpapers [legacy]
 
 ## Introduction
 This tool was designed to simplify the process of extracting Windows 
